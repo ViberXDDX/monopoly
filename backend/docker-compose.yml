@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: monopoly-db
+    environment:
+      POSTGRES_DB: monopoly
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - monopoly-network
+
+  # Monopoly Backend API
+  api:
+    build: .
+    container_name: monopoly-api
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/monopoly
+      JWT_SECRET: dev_secret_change_in_production
+      JWT_EXPIRES_IN: 7d
+      GUEST_TOKEN_EXPIRES_IN: 24h
+      PORT: 3000
+      NODE_ENV: production
+      RATE_LIMIT_MAX: 100
+      RATE_LIMIT_TIME_WINDOW: 300000
+      SOCKET_HEARTBEAT_INTERVAL: 25000
+      SOCKET_HEARTBEAT_TIMEOUT: 60000
+      DEFAULT_STARTING_CASH: 1500
+      DEFAULT_HOUSE_LIMIT: 32
+      DEFAULT_HOTEL_LIMIT: 12
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - monopoly-network
+    restart: unless-stopped
+
+  # Redis for rate limiting and caching (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: monopoly-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - monopoly-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  monopoly-network:
+    driver: bridge

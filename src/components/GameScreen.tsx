@@ -12,6 +12,7 @@ import { EditPlayerModal } from "./game/EditPlayerModal";
 import { BankruptcyModal } from "./game/BankruptcyModal";
 import { VintageButton } from "./VintageButton";
 import { Star, Gift, ArrowLeft } from "lucide-react";
+import { boardTiles, BoardTileData } from "./game/BoardData";
 
 interface Player {
   id: string;
@@ -31,7 +32,7 @@ interface Property {
   color: string;
   price: number;
   rent: number;
-  owner?: string;
+  owner?: string; // color of owner (kept as-is)
   houses: number;
   hotel: boolean;
   group: string;
@@ -67,7 +68,7 @@ export function GameScreen({ onBack }: GameScreenProps) {
       isBankrupt: false,
     },
   ]);
-
+  const [canRoll, setCanRoll] = useState(true);
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(
     null
@@ -85,6 +86,7 @@ export function GameScreen({ onBack }: GameScreenProps) {
       | "editPlayer"
       | "bankruptcy"
       | null;
+    // ملاحظة: في حالة buy هنمرر { property, buyerId }
     data?: any;
   }>({ type: null });
   const [editingPlayer, setEditingPlayer] = useState<{
@@ -96,280 +98,8 @@ export function GameScreen({ onBack }: GameScreenProps) {
     amountOwed: number;
   } | null>(null);
 
-  // Board configuration
-  const boardTiles = [
-    // Bottom row (positions 0-10)
-    { id: "0", name: "GO", type: "corner", color: "#5b9aa8", position: 0 },
-    {
-      id: "1",
-      name: "Mediterranean Ave",
-      type: "property",
-      color: "#8b6f47",
-      price: 60,
-      rent: 2,
-      group: "brown",
-    },
-    { id: "2", name: "Community Chest", type: "chest", color: "#f4d35e" },
-    {
-      id: "3",
-      name: "Baltic Ave",
-      type: "property",
-      color: "#8b6f47",
-      price: 60,
-      rent: 4,
-      group: "brown",
-    },
-    { id: "4", name: "Income Tax", type: "tax", color: "#e8dcc4" },
-    {
-      id: "5",
-      name: "Reading RR",
-      type: "railroad",
-      color: "#2d1b0e",
-      price: 200,
-      rent: 25,
-      group: "railroad",
-    },
-    {
-      id: "6",
-      name: "Oriental Ave",
-      type: "property",
-      color: "#5b9aa8",
-      price: 100,
-      rent: 6,
-      group: "lightblue",
-    },
-    { id: "7", name: "Chance", type: "chance", color: "#c44536" },
-    {
-      id: "8",
-      name: "Vermont Ave",
-      type: "property",
-      color: "#5b9aa8",
-      price: 100,
-      rent: 6,
-      group: "lightblue",
-    },
-    {
-      id: "9",
-      name: "Connecticut Ave",
-      type: "property",
-      color: "#5b9aa8",
-      price: 120,
-      rent: 8,
-      group: "lightblue",
-    },
-    { id: "10", name: "Jail", type: "corner", color: "#c44536" },
-
-    // Left column (positions 11-19)
-    {
-      id: "11",
-      name: "St. Charles",
-      type: "property",
-      color: "#e8956f",
-      price: 140,
-      rent: 10,
-      group: "pink",
-    },
-    {
-      id: "12",
-      name: "Electric Co",
-      type: "utility",
-      color: "#f4d35e",
-      price: 150,
-      rent: 4,
-      group: "utility",
-    },
-    {
-      id: "13",
-      name: "States Ave",
-      type: "property",
-      color: "#e8956f",
-      price: 140,
-      rent: 10,
-      group: "pink",
-    },
-    {
-      id: "14",
-      name: "Virginia Ave",
-      type: "property",
-      color: "#e8956f",
-      price: 160,
-      rent: 12,
-      group: "pink",
-    },
-    {
-      id: "15",
-      name: "Penn RR",
-      type: "railroad",
-      color: "#2d1b0e",
-      price: 200,
-      rent: 25,
-      group: "railroad",
-    },
-    {
-      id: "16",
-      name: "St. James",
-      type: "property",
-      color: "#e8956f",
-      price: 180,
-      rent: 14,
-      group: "orange",
-    },
-    { id: "17", name: "Comm Chest", type: "chest", color: "#f4d35e" },
-    {
-      id: "18",
-      name: "Tennessee",
-      type: "property",
-      color: "#e8956f",
-      price: 180,
-      rent: 14,
-      group: "orange",
-    },
-    {
-      id: "19",
-      name: "New York Ave",
-      type: "property",
-      color: "#e8956f",
-      price: 200,
-      rent: 16,
-      group: "orange",
-    },
-
-    // Top row (positions 20-30)
-    { id: "20", name: "Free Parking", type: "corner", color: "#f4d35e" },
-    {
-      id: "21",
-      name: "Kentucky Ave",
-      type: "property",
-      color: "#c44536",
-      price: 220,
-      rent: 18,
-      group: "red",
-    },
-    { id: "22", name: "Chance", type: "chance", color: "#c44536" },
-    {
-      id: "23",
-      name: "Indiana Ave",
-      type: "property",
-      color: "#c44536",
-      price: 220,
-      rent: 18,
-      group: "red",
-    },
-    {
-      id: "24",
-      name: "Illinois Ave",
-      type: "property",
-      color: "#c44536",
-      price: 240,
-      rent: 20,
-      group: "red",
-    },
-    {
-      id: "25",
-      name: "B&O RR",
-      type: "railroad",
-      color: "#2d1b0e",
-      price: 200,
-      rent: 25,
-      group: "railroad",
-    },
-    {
-      id: "26",
-      name: "Atlantic Ave",
-      type: "property",
-      color: "#f4d35e",
-      price: 260,
-      rent: 22,
-      group: "yellow",
-    },
-    {
-      id: "27",
-      name: "Ventnor Ave",
-      type: "property",
-      color: "#f4d35e",
-      price: 260,
-      rent: 22,
-      group: "yellow",
-    },
-    {
-      id: "28",
-      name: "Water Works",
-      type: "utility",
-      color: "#5b9aa8",
-      price: 150,
-      rent: 4,
-      group: "utility",
-    },
-    {
-      id: "29",
-      name: "Marvin Gardens",
-      type: "property",
-      color: "#f4d35e",
-      price: 280,
-      rent: 24,
-      group: "yellow",
-    },
-    { id: "30", name: "Go To Jail", type: "corner", color: "#c44536" },
-
-    // Right column (positions 31-39)
-    {
-      id: "31",
-      name: "Pacific Ave",
-      type: "property",
-      color: "#5b9aa8",
-      price: 300,
-      rent: 26,
-      group: "green",
-    },
-    {
-      id: "32",
-      name: "N Carolina",
-      type: "property",
-      color: "#5b9aa8",
-      price: 300,
-      rent: 26,
-      group: "green",
-    },
-    { id: "33", name: "Comm Chest", type: "chest", color: "#f4d35e" },
-    {
-      id: "34",
-      name: "Penn Ave",
-      type: "property",
-      color: "#5b9aa8",
-      price: 320,
-      rent: 28,
-      group: "green",
-    },
-    {
-      id: "35",
-      name: "Short Line",
-      type: "railroad",
-      color: "#2d1b0e",
-      price: 200,
-      rent: 25,
-      group: "railroad",
-    },
-    { id: "36", name: "Chance", type: "chance", color: "#c44536" },
-    {
-      id: "37",
-      name: "Park Place",
-      type: "property",
-      color: "#2d1b0e",
-      price: 350,
-      rent: 35,
-      group: "darkblue",
-    },
-    { id: "38", name: "Luxury Tax", type: "tax", color: "#e8dcc4" },
-    {
-      id: "39",
-      name: "Boardwalk",
-      type: "property",
-      color: "#2d1b0e",
-      price: 400,
-      rent: 50,
-      group: "darkblue",
-    },
-  ];
+  // Board configuration is imported from game/BoardData.ts
+  // `boardTiles` is the canonical list (imported at top of file)
 
   const [properties, setProperties] = useState<Property[]>(
     boardTiles
@@ -383,8 +113,8 @@ export function GameScreen({ onBack }: GameScreenProps) {
         id: tile.id,
         name: tile.name,
         color: tile.color,
-        price: tile.price || 0,
-        rent: tile.rent || 0,
+        price: (tile as any).price || 0,
+        rent: (tile as any).rent || 0,
         houses: 0,
         hotel: false,
         group: (tile as any).group || "",
@@ -400,24 +130,31 @@ export function GameScreen({ onBack }: GameScreenProps) {
     }, 3000);
   };
 
+  // دالة موحّدة لإنهاء الدور
+  const endTurn = () => {
+    setCurrentPlayerIndex((prev) => (prev + 1) % players.length);
+    setCanRoll(true); // اللاعب التالي مسموح له يرمي
+  };
+
   const handleRollDice = (value: number) => {
-    // Mark game as started on first dice roll
-    if (!gameStarted) {
-      setGameStarted(true);
-    }
+    // لو الزر متقفّل، تجاهل أي ضغطات
+    if (!canRoll) return;
+
+    // أقفله فورًا عشان ما ينفعش يرمي تاني في نفس الدور
+    setCanRoll(false);
+
+    if (!gameStarted) setGameStarted(true);
 
     const currentPlayer = players[currentPlayerIndex];
 
-    // Skip bankrupt players
     if (currentPlayer.isBankrupt) {
       addToast(`${currentPlayer.name} is bankrupt!`, "error");
-      setCurrentPlayerIndex((prev) => (prev + 1) % players.length);
+      endTurn(); // ده هيعيد تمكين الرمية للاعب التالي
       return;
     }
 
     const newPosition = (currentPlayer.position + value) % 40;
 
-    // Check if passed GO
     if (newPosition < currentPlayer.position) {
       addToast(`${currentPlayer.name} passed GO! +$200`, "success");
       setPlayers((prev) =>
@@ -427,7 +164,6 @@ export function GameScreen({ onBack }: GameScreenProps) {
       );
     }
 
-    // Move player
     setPlayers((prev) =>
       prev.map((p) =>
         p.id === currentPlayer.id ? { ...p, position: newPosition } : p
@@ -436,7 +172,6 @@ export function GameScreen({ onBack }: GameScreenProps) {
 
     addToast(`${currentPlayer.name} rolled ${value}!`, "info");
 
-    // Handle landing
     setTimeout(() => {
       handleLanding(newPosition, currentPlayer);
     }, 500);
@@ -456,39 +191,57 @@ export function GameScreen({ onBack }: GameScreenProps) {
 
         // Only show buy prompt if property is unowned
         if (!property.owner) {
-          setModalState({ type: "buy", data: property });
+          // اربط المودال بالمشتري الحالي
+          setModalState({
+            type: "buy",
+            data: { property, buyerId: player.id },
+          });
+          return; // ما ننهاش الدور هنا
         } else if (property.owner !== player.color) {
           // Pay rent to owner
-          handleRent(property, player);
+          const paid = handleRent(property, player); // true لو تم الدفع، false لو إفلاس
+          if (paid) endTurn();
+          return;
         } else {
-          // Player owns this property, no action needed
+          // Player owns this property
           addToast(`You own this property!`, "info");
+          endTurn();
+          return;
         }
       }
     } else if (tile.type === "chance") {
-      handleChance();
+      handleChance(); // بيفتح مودال
+      return; // هننهي الدور عند Continue
     } else if (tile.type === "chest") {
-      handleCommunityChest();
+      handleCommunityChest(); // بيفتح مودال
+      return; // هننهي الدور عند Continue
     } else if (tile.name === "Go To Jail") {
       handleGoToJail(player);
+      endTurn();
+      return;
     }
 
-    // Next turn
-    setTimeout(() => {
-      setCurrentPlayerIndex((prev) => (prev + 1) % players.length);
-    }, 2000);
+    // لو مفيش أي حدث
+    endTurn();
   };
 
   const handleBuyProperty = () => {
     if (!modalState.data) return;
 
-    const property = modalState.data as Property;
-    const currentPlayer = players[currentPlayerIndex];
+    const { property, buyerId } = modalState.data as {
+      property: Property;
+      buyerId: string;
+    };
+    const buyer = players.find((p) => p.id === buyerId);
+    if (!buyer) {
+      setModalState({ type: null });
+      return;
+    }
 
-    if (currentPlayer.cash >= property.price) {
+    if (buyer.cash >= property.price) {
       setPlayers((prev) =>
         prev.map((p) =>
-          p.id === currentPlayer.id
+          p.id === buyer.id
             ? {
                 ...p,
                 cash: p.cash - property.price,
@@ -500,20 +253,21 @@ export function GameScreen({ onBack }: GameScreenProps) {
 
       setProperties((prev) =>
         prev.map((p) =>
-          p.id === property.id ? { ...p, owner: currentPlayer.color } : p
+          p.id === property.id ? { ...p, owner: buyer.color } : p
         )
       );
 
-      addToast(`${currentPlayer.name} bought ${property.name}!`, "success");
-      setSelectedProperty({ ...property, owner: currentPlayer.color });
+      addToast(`${buyer.name} bought ${property.name}!`, "success");
+      setSelectedProperty({ ...property, owner: buyer.color });
     } else {
       addToast("Not enough cash!", "error");
     }
 
     setModalState({ type: null });
+    endTurn(); // إنهاء الدور بعد الشراء/الرفض
   };
 
-  const handleRent = (property: Property, player: Player) => {
+  const handleRent = (property: Property, player: Player): boolean => {
     const rentAmount = property.rent;
     const newCash = player.cash - rentAmount;
 
@@ -522,7 +276,7 @@ export function GameScreen({ onBack }: GameScreenProps) {
       // Player cannot afford, need to sell properties or go bankrupt
       setBankruptcyState({ playerId: player.id, amountOwed: rentAmount });
       setModalState({ type: "bankruptcy" });
-      return;
+      return false;
     }
 
     setPlayers((prev) =>
@@ -538,6 +292,7 @@ export function GameScreen({ onBack }: GameScreenProps) {
     );
 
     addToast(`Paid ${rentAmount} rent!`, "warning");
+    return true;
   };
 
   const handleChance = () => {
@@ -663,6 +418,7 @@ export function GameScreen({ onBack }: GameScreenProps) {
     addToast(`Payment completed!`, "success");
     setModalState({ type: null });
     setBankruptcyState(null);
+    endTurn(); // إنهاء الدور بعد غلق الإفلاس
   };
 
   const handleDeclareBankruptcy = () => {
@@ -696,31 +452,33 @@ export function GameScreen({ onBack }: GameScreenProps) {
     if (remainingPlayers.length === 1) {
       addToast(`${remainingPlayers[0].name} wins!`, "success");
     }
+
+    endTurn(); // أنهِ الدور بعد إعلان الإفلاس
   };
 
-  // Get tile position in grid layout
   const getTilePosition = (index: number): { row: number; col: number } => {
-    // Bottom row: 0-10
+    // Top row: 0-10 (left -> right)
     if (index <= 10) {
-      return { row: 10, col: 10 - index };
+      return { row: 0, col: index };
     }
-    // Left column: 11-19
+    // Right column: 11-19 (top -> bottom)
     if (index <= 19) {
-      return { row: 10 - (index - 10), col: 0 };
+      return { row: index - 10, col: 10 };
     }
-    // Top row: 20-30
+    // Bottom row: 20-30 (right -> left)
     if (index <= 30) {
-      return { row: 0, col: index - 20 };
+      return { row: 10, col: 30 - index };
     }
-    // Right column: 31-39
-    return { row: index - 30, col: 10 };
+    // Left column: 31-39 (bottom -> top)
+    return { row: 40 - index, col: 0 };
   };
 
   const getTileOrientation = (index: number) => {
-    if (index <= 10) return "bottom";
-    if (index <= 19) return "left";
-    if (index <= 30) return "top";
-    return "right";
+    // With origin at top-left, orient tiles according to their side
+    if (index <= 10) return "top"; // top row
+    if (index <= 19) return "right"; // right column
+    if (index <= 30) return "bottom"; // bottom row
+    return "left"; // left column
   };
 
   const isCorner = (index: number) => {
@@ -744,7 +502,7 @@ export function GameScreen({ onBack }: GameScreenProps) {
           </motion.button>
 
           {/* Dice */}
-          <DiceButton onRoll={handleRollDice} disabled={false} />
+          <DiceButton onRoll={handleRollDice} disabled={!canRoll} />
 
           {/* Bank & Turn */}
           <div className="flex items-center gap-4">
@@ -772,7 +530,7 @@ export function GameScreen({ onBack }: GameScreenProps) {
                   <PlayerToken
                     playerIndex={player.avatarIndex}
                     color={player.color}
-                    size="lg"
+                    size="xlg"
                   />
                 </motion.div>
               ))}
@@ -818,7 +576,16 @@ export function GameScreen({ onBack }: GameScreenProps) {
         <div className="flex items-center justify-center">
           <div className="relative bg-[#e8dcc4] border-8 border-[#2d1b0e] rounded-lg shadow-[8px_8px_0px_0px_#2d1b0e] p-2">
             {/* Board grid */}
-            <div className="grid grid-cols-11 gap-0">
+            <div
+              className="grid gap-0"
+              style={{
+                gridTemplateColumns:
+                  "calc(var(--tile-w) * 1.5) repeat(9, var(--tile-w)) calc(var(--tile-w) * 1.5)",
+                gridTemplateRows:
+                  "calc(var(--tile-w) * 1.5) repeat(9, var(--tile-w)) calc(var(--tile-w) * 1.5)",
+                ["--tile-w" as any]: "64px",
+              }}
+            >
               {Array.from({ length: 11 * 11 }).map((_, idx) => {
                 const row = Math.floor(idx / 11);
                 const col = idx % 11;
@@ -844,7 +611,7 @@ export function GameScreen({ onBack }: GameScreenProps) {
                         type={tile.type as any}
                         name={tile.name}
                         color={tile.color}
-                        price={tile.price}
+                        price={(tile as any).price}
                         owner={property?.owner}
                         position={tileIndex}
                         orientation={getTileOrientation(tileIndex)}
@@ -856,16 +623,9 @@ export function GameScreen({ onBack }: GameScreenProps) {
 
                       {/* Player tokens */}
                       {playersHere.length > 0 && (
-                        <div className="absolute inset-0 flex items-center justify-center gap-0.5 pointer-events-none z-10">
-                          {playersHere.map((player, pIdx) => (
-                            <div
-                              key={player.id}
-                              style={{
-                                transform: `translate(${
-                                  pIdx * 6 - (playersHere.length - 1) * 3
-                                }px, 0)`,
-                              }}
-                            >
+                        <div className="absolute inset-0 flex flex-wrap items-center justify-center gap-0.5 pointer-events-none z-10 p-0.5">
+                          {playersHere.map((player) => (
+                            <div key={player.id} className="m-0 p-0">
                               <PlayerToken
                                 playerIndex={player.avatarIndex}
                                 color={player.color}
@@ -886,13 +646,21 @@ export function GameScreen({ onBack }: GameScreenProps) {
                       <div
                         key={idx}
                         className="col-span-1 row-span-1 bg-[#fef9ed] border-4 border-[#2d1b0e] rounded-lg flex items-center justify-center"
+                        style={{
+                          width: "calc(var(--tile-w) * 1)",
+                          height: "calc(var(--tile-w) * 1)",
+                          margin: "auto",
+                        }}
                       >
                         <motion.div
                           className="text-center"
                           animate={{ rotate: [0, 3, -3, 0] }}
                           transition={{ duration: 3, repeat: Infinity }}
                         >
-                          <p className="text-[0.6rem] text-[#2d1b0e] uppercase tracking-widest">
+                          <p
+                            className="text-[0.6rem] font-bold text-[#2d1b0e] uppercase width-100px"
+                            style={{ fontWeight: 700 }}
+                          >
                             Monopoly
                           </p>
                           <p className="text-[0.5rem] text-[#6b5642]">
@@ -918,7 +686,7 @@ export function GameScreen({ onBack }: GameScreenProps) {
           canBuy={
             selectedProperty !== null &&
             !selectedProperty.owner &&
-            players[currentPlayerIndex].cash >= selectedProperty.price
+            players[currentPlayerIndex].cash >= (selectedProperty?.price ?? 0)
           }
         />
       </div>
@@ -983,27 +751,38 @@ export function GameScreen({ onBack }: GameScreenProps) {
         onClose={() => setModalState({ type: null })}
         title="Purchase Property"
       >
-        {modalState.data && (
-          <div className="space-y-4">
-            <p className="text-center text-[#2d1b0e]">
-              Would you like to buy <strong>{modalState.data.name}</strong>?
-            </p>
-            <div className="bg-[#f4d35e] border-3 border-[#2d1b0e] rounded-lg p-4 text-center">
-              <p className="text-[#2d1b0e]">Price: ${modalState.data.price}</p>
-            </div>
-            <div className="flex gap-4 justify-center">
-              <VintageButton variant="primary" onClick={handleBuyProperty}>
-                Buy
-              </VintageButton>
-              <VintageButton
-                variant="secondary"
-                onClick={() => setModalState({ type: null })}
-              >
-                Pass
-              </VintageButton>
-            </div>
-          </div>
-        )}
+        {modalState.data?.property
+          ? (() => {
+              const buyData = modalState.data.property as Property;
+              return (
+                <div className="space-y-4">
+                  <p className="text-center text-[#2d1b0e]">
+                    Would you like to buy <strong>{buyData.name}</strong>?
+                  </p>
+                  <div className="bg-[#f4d35e] border-3 border-[#2d1b0e] rounded-lg p-4 text-center">
+                    <p className="text-[#2d1b0e]">Price: ${buyData.price}</p>
+                  </div>
+                  <div className="flex gap-4 justify-center">
+                    <VintageButton
+                      variant="primary"
+                      onClick={handleBuyProperty}
+                    >
+                      Buy
+                    </VintageButton>
+                    <VintageButton
+                      variant="secondary"
+                      onClick={() => {
+                        setModalState({ type: null });
+                        endTurn(); // end turn on Pass
+                      }}
+                    >
+                      Pass
+                    </VintageButton>
+                  </div>
+                </div>
+              );
+            })()
+          : null}
       </GameModal>
 
       <GameModal
@@ -1020,7 +799,10 @@ export function GameScreen({ onBack }: GameScreenProps) {
             <VintageButton
               variant="primary"
               className="w-full"
-              onClick={() => setModalState({ type: null })}
+              onClick={() => {
+                setModalState({ type: null });
+                endTurn(); // إنهاء الدور بعد قراءة الكارت
+              }}
             >
               Continue
             </VintageButton>
@@ -1042,7 +824,10 @@ export function GameScreen({ onBack }: GameScreenProps) {
             <VintageButton
               variant="primary"
               className="w-full"
-              onClick={() => setModalState({ type: null })}
+              onClick={() => {
+                setModalState({ type: null });
+                endTurn(); // إنهاء الدور بعد قراءة الكارت
+              }}
             >
               Continue
             </VintageButton>

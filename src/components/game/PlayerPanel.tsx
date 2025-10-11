@@ -22,12 +22,12 @@ interface PlayerPanelProps {
   onEditPlayer: (id: string) => void;
 }
 
-export function PlayerPanel({ 
-  players, 
-  currentPlayerId, 
-  onAddPlayer, 
+export function PlayerPanel({
+  players,
+  currentPlayerId,
+  onAddPlayer,
   onRemovePlayer,
-  onEditPlayer 
+  onEditPlayer
 }: PlayerPanelProps) {
   return (
     <div className="w-full bg-[#fef9ed] border-4 border-[#2d1b0e] rounded-lg shadow-[6px_6px_0px_0px_#2d1b0e] p-4 h-full overflow-y-auto">
@@ -50,12 +50,14 @@ export function PlayerPanel({
             {/* Player info */}
             <div className="flex items-center gap-2 mb-2">
               {/* Avatar */}
-              <PlayerToken 
-                playerIndex={player.avatarIndex}
-                color={player.color}
-                size="md"
-              />
-              
+              <div className="w-10 h-10 flex items-center justify-center rounded-full border-2 border-[#2d1b0e] overflow-hidden">
+                <PlayerToken
+                  playerIndex={player.avatarIndex}
+                  color={player.color}
+                  size="md"
+                />
+              </div>
+
               <div className="flex-1 min-w-0">
                 <p className={`text-[#2d1b0e] truncate ${player.isBankrupt ? "line-through opacity-50" : ""}`}>
                   {player.name}
@@ -108,7 +110,7 @@ export function PlayerPanel({
       )}
 
       {/* Grain texture */}
-      <div 
+      <div
         className="absolute inset-0 opacity-10 pointer-events-none rounded-lg"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' /%3E%3C/svg%3E")`

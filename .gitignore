@@ -1,5 +1,36 @@
+# Node.js
 node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Vite / React build output
 dist/
 .vite/
+build/
+
+# Environment variables
 .env
+.env.*
+
+# Prisma (database)
+prisma/dev.db
+prisma/dev.db-journal
+
+# Backend build output
+backend/node_modules/
+backend/dist/
+backend/.env
+
+# IDE / OS files
 .DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Logs
+*.log
+logs/
